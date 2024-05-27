@@ -5,6 +5,7 @@
 PROJECT_NAME = culvertvision
 PYTHON_VERSION = 3.11
 PYTHON_INTERPRETER = python
+CONDA_BIN = mamba
 
 #################################################################################
 # COMMANDS                                                                      #
@@ -14,7 +15,7 @@ PYTHON_INTERPRETER = python
 ## Install Python Dependencies
 .PHONY: requirements
 requirements:
-	conda env update --name $(PROJECT_NAME) --file environment.yml --prune
+	$(CONDA_BIN) env update --name $(PROJECT_NAME) --file environment.yml --prune
 	
 
 
@@ -43,9 +44,9 @@ format:
 ## Set up python interpreter environment
 .PHONY: create_environment
 create_environment:
-	conda env create --name $(PROJECT_NAME) -f environment.yml
+	$(CONDA_BIN) env create --name $(PROJECT_NAME) -f environment.yml
 	
-	@echo ">>> conda env created. Activate with:\nconda activate $(PROJECT_NAME)"
+	@echo ">>> $(CONDA_BIN) env created. Activate with:\$(CONDA_BIN) activate $(PROJECT_NAME)"
 	
 
 
