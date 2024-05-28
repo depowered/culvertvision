@@ -10,6 +10,12 @@ dependencies:
   - typer
   - loguru
   - tqdm
+  - pydantic
+  - pydantic-settings
+  - requests
+  - gdal
+  - libgdal-arrow-parquet
+  - qgis
   - pip:
     - python-dotenv
     - -e .
