@@ -12,12 +12,6 @@ CONDA_BIN = mamba
 #################################################################################
 
 
-## Install Python Dependencies
-.PHONY: requirements
-requirements:
-	$(CONDA_BIN) env update --name $(PROJECT_NAME) --file environment.yml --prune
-	
-
 
 
 ## Delete all compiled Python files
@@ -41,13 +35,20 @@ format:
 
 
 
-## Set up python interpreter environment
+## Set up the environment
 .PHONY: create_environment
 create_environment:
 	$(CONDA_BIN) env create --name $(PROJECT_NAME) -f environment.yml
 	
-	@echo ">>> $(CONDA_BIN) env created. Activate with:\$(CONDA_BIN) activate $(PROJECT_NAME)"
+	@echo ">>> $(CONDA_BIN) env created. Activate with: $(CONDA_BIN) activate $(PROJECT_NAME)"
 	
+
+## Update the environement
+.PHONY: update_environment
+update_environment:
+	$(CONDA_BIN) env update --name $(PROJECT_NAME) --file environment.yml --prune
+	
+
 
 
 
