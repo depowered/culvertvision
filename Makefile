@@ -63,6 +63,12 @@ watersheds:
 	$(CONDA_BIN) run --name $(PROJECT_NAME) --live-stream \
 		python culvertvision/data/watersheds.py
 
+## Make boundaries dataset
+.PHONY: boundaries
+boundaries:
+	$(CONDA_BIN) run --name $(PROJECT_NAME) --live-stream \
+		python culvertvision/data/boundaries.py
+
 
 #################################################################################
 # Self Documenting Commands                                                     #
