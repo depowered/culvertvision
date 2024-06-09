@@ -1,69 +1,86 @@
 import shlex
 import subprocess
+from enum import StrEnum
 from pathlib import Path
 
-import requests
 from loguru import logger
-from pydantic import config
 
-from culvertvision.config import StorageConfig
+from culvertvision.config import Settings
+from culvertvision.data.utils import download_file
 
-WATERSHEDS = {
-    "raw": {
-        "filename": "NHDPLUS_H_0704_HU4_GPKG.zip",
-        "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GPKG/NHDPLUS_H_0704_HU4_GPKG.zip",
-    },
-    "intermim": {"filename": "huc12_watersheds.gpq"},
-}
+SOURCE_URL = "https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GPKG/NHDPLUS_H_0704_HU4_GPKG.zip"
 
 
-def download_watersheds(config: StorageConfig) -> Path:
-    url = WATERSHEDS["raw"]["url"]
-    filename = WATERSHEDS["raw"]["filename"]
-    output = config.data_dir / "raw" / filename
+class Huc12Watersheds(StrEnum):
+    DOWNLOADED = "raw/NHDPLUS_H_0704_HU4_GPKG.zip"
+    EXTRACTED = "interim/huc_12_watersheds.gpkg"
+    CLEANED = "processed/huc_12_watersheds.gpkg"
 
-    if output.exists():
-        logger.info(f"Skipping download: {output.name} already exists.")
-        return output
-
-    logger.info(f"Downloading raw watershed file: {filename}")
-    with requests.get(url, stream=True) as r:
-        r.raise_for_status()
-
-        with open(output, "wb") as f:
-            for chunk in r.iter_content(chunk_size=10 * 1024):
-                f.write(chunk)
-
-    return output
+    def get_path(self, settings: Settings) -> Path:
+        return settings.DATA_DIR / self.value
 
 
-def extract_huc12_watersheds(config: StorageConfig) -> Path:
-    zipfile = config.data_dir / "raw" / WATERSHEDS["raw"]["filename"]
-    src_dataset = f"/vsizip/{zipfile}/{zipfile.stem}.gpkg"
-    layer_name = "WBDHU12"
+def download_watersheds(settings: Settings) -> Path:
+    """Download the NHDPLUS dataset for the project location."""
 
-    dst_dataset = config.data_dir / "interim" / WATERSHEDS["intermim"]["filename"]
-    dst_crs = "EPSG:26915"
-    # Filter duplicate geometries and exclude unneeded fields
-    sql = f"SELECT DISTINCT HUC12 as huc12, Name as name, Shape as geom from {layer_name}"
+    src = SOURCE_URL
+    dst = Huc12Watersheds.DOWNLOADED.get_path(settings)
 
-    if dst_dataset.exists():
-        logger.info(f"Skipping extraction: {dst_dataset.name} already exists.")
-        return dst_dataset
+    if dst.exists():
+        logger.info(f"Downloaded watersheds found at: {dst}")
+        return dst
 
-    cmd = f"""ogr2ogr \
-                -f Parquet \
-                -t_srs {dst_crs} \
-                -sql '{sql}' \
-                {dst_dataset} {src_dataset}"""
+    logger.info(f"Downloading watersheds to: {dst}")
+    return download_file(url=src, dst=dst)
 
-    logger.info(f"Extracting {layer_name} to {dst_dataset.name}")
+
+def extract_watersheds(settings: Settings) -> Path:
+    """Extract the WBHUC12 layer to its own geopackage."""
+
+    src = Huc12Watersheds.DOWNLOADED.get_path(settings)
+    dst = Huc12Watersheds.EXTRACTED.get_path(settings)
+
+    if dst.exists():
+        logger.info(f"Extracted watersheds found at: {dst}")
+        return dst
+
+    vsi_src = f"/vsizip/{src}/{src.stem}.gpkg"
+    layer = "WBDHU12"
+
+    cmd = f"ogr2ogr {dst} {vsi_src} {layer}"
+
+    logger.info(f"Extracting WBHUC12 layer to: {dst}")
     subprocess.run(shlex.split(cmd), check=True)
 
-    return dst_dataset
+    return dst
+
+
+def clean_watersheds(settings: Settings) -> Path:
+    """Remove duplicates, reproject, and filter fields."""
+
+    src = Huc12Watersheds.EXTRACTED.get_path(settings)
+    dst = Huc12Watersheds.CLEANED.get_path(settings)
+
+    if dst.exists():
+        logger.info(f"Cleaned watersheds found at: {dst}")
+        return dst
+
+    layer = "WBDHU12"
+
+    cmd = f"""ogr2ogr \
+                -t_srs EPSG:26915 \
+                -sql 'SELECT DISTINCT HUC12 as huc12, Name as name, Shape as geom from {layer}' \
+                -nln watersheds \
+                {dst} {src}"""
+
+    logger.info(f"Writing cleaned watershed boundaries to: {dst}")
+    subprocess.run(shlex.split(cmd), check=True)
+
+    return dst
 
 
 if __name__ == "__main__":
-    config = StorageConfig()
-    download_watersheds(config)
-    extract_huc12_watersheds(config)
+    settings = Settings()
+    download_watersheds(settings)
+    extract_watersheds(settings)
+    clean_watersheds(settings)

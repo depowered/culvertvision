@@ -57,10 +57,11 @@ update_environment:
 #################################################################################
 
 
-## Make Dataset
-.PHONY: data
-data: requirements
-	$(PYTHON_INTERPRETER) culvertvision/data/make_dataset.py
+## Make watersheds dataset
+.PHONY: watersheds
+watersheds:
+	$(CONDA_BIN) run --name $(PROJECT_NAME) --live-stream \
+		python culvertvision/data/watersheds.py
 
 
 #################################################################################

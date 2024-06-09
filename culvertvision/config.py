@@ -4,8 +4,8 @@ from loguru import logger
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-class StorageConfig(BaseSettings):
-    data_dir: Path
+class Settings(BaseSettings):
+    DATA_DIR: Path
 
     model_config = SettingsConfigDict(
         env_prefix="culvertvision_",
