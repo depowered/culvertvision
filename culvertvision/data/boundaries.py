@@ -1,30 +1,26 @@
 import shlex
 import subprocess
-from enum import StrEnum
 from pathlib import Path
 
 from loguru import logger
 
-from culvertvision.config import Settings
+from culvertvision.data.io_manager import DatasetEnum, DatasetIOManager
 from culvertvision.data.utils import download_file
 
 SOURCE_URL = "https://resources.gisdata.mn.gov/pub/gdrs/data/pub/us_mn_state_dnr/bdry_counties_in_minnesota/gpkg_bdry_counties_in_minnesota.zip"
 
 
-class CountyBoundaries(StrEnum):
+class CountyBoundaries(DatasetEnum):
     DOWNLOADED = "raw/gpkg_bdry_counties_in_minnesota.zip"
     EXTRACTED = "interim/county_boundaries.gpkg"
     CLEANED = "processed/county_boundaries.gpkg"
 
-    def get_path(self, settings: Settings) -> Path:
-        return settings.DATA_DIR / self.value
 
-
-def download_boundaries(settings: Settings) -> Path:
+def download_boundaries(io_manager: DatasetIOManager) -> Path:
     """Download a dataset of MN county boundaries."""
 
     src = SOURCE_URL
-    dst = CountyBoundaries.DOWNLOADED.get_path(settings)
+    dst = io_manager.get_path(CountyBoundaries.DOWNLOADED)
 
     if dst.exists():
         logger.info(f"Downloaded county boundaries found at: {dst}")
@@ -34,11 +30,11 @@ def download_boundaries(settings: Settings) -> Path:
     return download_file(url=src, dst=dst)
 
 
-def extract_boundaries(settings: Settings) -> Path:
+def extract_boundaries(io_manager: DatasetIOManager) -> Path:
     """Extract the mn_county_boundaries_multipart layer from the zipped geopackage."""
 
-    src = CountyBoundaries.DOWNLOADED.get_path(settings)
-    dst = CountyBoundaries.EXTRACTED.get_path(settings)
+    src = io_manager.get_path(CountyBoundaries.DOWNLOADED)
+    dst = io_manager.get_path(CountyBoundaries.EXTRACTED)
 
     if dst.exists():
         logger.info(f"Extracted county boundaries found at: {dst}")
@@ -55,11 +51,11 @@ def extract_boundaries(settings: Settings) -> Path:
     return dst
 
 
-def clean_boundaries(settings: Settings) -> Path:
+def clean_boundaries(io_manager: DatasetIOManager) -> Path:
     """Remove duplicates, reproject, and filter fields."""
 
-    src = CountyBoundaries.EXTRACTED.get_path(settings)
-    dst = CountyBoundaries.CLEANED.get_path(settings)
+    src = io_manager.get_path(CountyBoundaries.EXTRACTED)
+    dst = io_manager.get_path(CountyBoundaries.CLEANED)
 
     if dst.exists():
         logger.info(f"Cleaned county boundaries found at: {dst}")
@@ -79,9 +75,15 @@ def clean_boundaries(settings: Settings) -> Path:
     return dst
 
 
+def make_dataset(io_manager: DatasetIOManager) -> None:
+    download_boundaries(io_manager)
+    extract_boundaries(io_manager)
+    clean_boundaries(io_manager)
 
-if __name__ == "__main__":
-    settings = Settings()
-    download_boundaries(settings)
-    extract_boundaries(settings)
-    clean_boundaries(settings)
+
+def remove_dataset(io_manager: DatasetIOManager) -> None:
+    for item in CountyBoundaries:
+        file = io_manager.get_path(item)
+        if file.exists():
+            logger.info(f"Deleting: {file}")
+            file.unlink()

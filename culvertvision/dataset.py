@@ -1,28 +1,36 @@
-from pathlib import Path
-
 import typer
-from loguru import logger
-from tqdm import tqdm
 
-from culvertvision.config import PROCESSED_DATA_DIR, RAW_DATA_DIR
+from culvertvision.config import Settings
+from culvertvision.data import boundaries, watersheds
+from culvertvision.data.io_manager import LocalDatasetIOManager
 
 app = typer.Typer()
 
+IO_MANAGER = LocalDatasetIOManager(data_dir=Settings().DATA_DIR)
+
 
 @app.command()
-def main(
-    # ---- REPLACE DEFAULT PATHS AS APPROPRIATE ----
-    input_path: Path = RAW_DATA_DIR / "dataset.csv",
-    output_path: Path = PROCESSED_DATA_DIR / "dataset.csv",
-    # ----------------------------------------------
-):
-    # ---- REPLACE THIS WITH YOUR OWN CODE ----
-    logger.info("Processing dataset...")
-    for i in tqdm(range(10), total=10):
-        if i == 5:
-            logger.info("Something happened for iteration 5.")
-    logger.success("Processing dataset complete.")
-    # -----------------------------------------
+def make_boundaries() -> None:
+    "Create the boundaries dataset."
+    boundaries.make_dataset(IO_MANAGER)
+
+
+@app.command()
+def remove_boundaries() -> None:
+    "Remove all files related to the boundaries dataset."
+    boundaries.remove_dataset(IO_MANAGER)
+
+
+@app.command()
+def make_watersheds() -> None:
+    "Create the watersheds dataset."
+    watersheds.make_dataset(IO_MANAGER)
+
+
+@app.command()
+def remove_watersheds() -> None:
+    "Remove all files related to the boundaries dataset."
+    watersheds.remove_dataset(IO_MANAGER)
 
 
 if __name__ == "__main__":

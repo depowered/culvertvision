@@ -31,6 +31,7 @@ lint:
 .PHONY: format
 format:
 	black --config pyproject.toml culvertvision
+	isort --profile black culvertvision
 
 
 
@@ -57,17 +58,21 @@ update_environment:
 #################################################################################
 
 
-## Make watersheds dataset
-.PHONY: watersheds
-watersheds:
+## Create all datasets
+.PHONY: create_datasets
+create_datasets:
 	$(CONDA_BIN) run --name $(PROJECT_NAME) --live-stream \
-		python culvertvision/data/watersheds.py
+		python culvertvision/dataset.py make-watersheds && \
+		python culvertvision/dataset.py make-boundaries
 
-## Make boundaries dataset
-.PHONY: boundaries
-boundaries:
+
+
+## Delete all datasets
+.PHONY: remove_datasets
+remove_datasets:
 	$(CONDA_BIN) run --name $(PROJECT_NAME) --live-stream \
-		python culvertvision/data/boundaries.py
+		python culvertvision/dataset.py remove-watersheds && \
+		python culvertvision/dataset.py remove-boundaries
 
 
 #################################################################################

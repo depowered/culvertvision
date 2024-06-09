@@ -1,30 +1,26 @@
 import shlex
 import subprocess
-from enum import StrEnum
 from pathlib import Path
 
 from loguru import logger
 
-from culvertvision.config import Settings
+from culvertvision.data.io_manager import DatasetEnum, DatasetIOManager
 from culvertvision.data.utils import download_file
 
 SOURCE_URL = "https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GPKG/NHDPLUS_H_0704_HU4_GPKG.zip"
 
 
-class Huc12Watersheds(StrEnum):
+class Huc12Watersheds(DatasetEnum):
     DOWNLOADED = "raw/NHDPLUS_H_0704_HU4_GPKG.zip"
     EXTRACTED = "interim/huc_12_watersheds.gpkg"
     CLEANED = "processed/huc_12_watersheds.gpkg"
 
-    def get_path(self, settings: Settings) -> Path:
-        return settings.DATA_DIR / self.value
 
-
-def download_watersheds(settings: Settings) -> Path:
+def download_watersheds(io_manager: DatasetIOManager) -> Path:
     """Download the NHDPLUS dataset for the project location."""
 
     src = SOURCE_URL
-    dst = Huc12Watersheds.DOWNLOADED.get_path(settings)
+    dst = io_manager.get_path(Huc12Watersheds.DOWNLOADED)
 
     if dst.exists():
         logger.info(f"Downloaded watersheds found at: {dst}")
@@ -34,11 +30,11 @@ def download_watersheds(settings: Settings) -> Path:
     return download_file(url=src, dst=dst)
 
 
-def extract_watersheds(settings: Settings) -> Path:
+def extract_watersheds(io_manager: DatasetIOManager) -> Path:
     """Extract the WBHUC12 layer to its own geopackage."""
 
-    src = Huc12Watersheds.DOWNLOADED.get_path(settings)
-    dst = Huc12Watersheds.EXTRACTED.get_path(settings)
+    src = io_manager.get_path(Huc12Watersheds.DOWNLOADED)
+    dst = io_manager.get_path(Huc12Watersheds.EXTRACTED)
 
     if dst.exists():
         logger.info(f"Extracted watersheds found at: {dst}")
@@ -55,11 +51,11 @@ def extract_watersheds(settings: Settings) -> Path:
     return dst
 
 
-def clean_watersheds(settings: Settings) -> Path:
+def clean_watersheds(io_manager: DatasetIOManager) -> Path:
     """Remove duplicates, reproject, and filter fields."""
 
-    src = Huc12Watersheds.EXTRACTED.get_path(settings)
-    dst = Huc12Watersheds.CLEANED.get_path(settings)
+    src = io_manager.get_path(Huc12Watersheds.EXTRACTED)
+    dst = io_manager.get_path(Huc12Watersheds.CLEANED)
 
     if dst.exists():
         logger.info(f"Cleaned watersheds found at: {dst}")
@@ -79,8 +75,15 @@ def clean_watersheds(settings: Settings) -> Path:
     return dst
 
 
-if __name__ == "__main__":
-    settings = Settings()
-    download_watersheds(settings)
-    extract_watersheds(settings)
-    clean_watersheds(settings)
+def make_dataset(io_manager: DatasetIOManager) -> None:
+    download_watersheds(io_manager)
+    extract_watersheds(io_manager)
+    clean_watersheds(io_manager)
+
+
+def remove_dataset(io_manager: DatasetIOManager) -> None:
+    for item in Huc12Watersheds:
+        file = io_manager.get_path(item)
+        if file.exists():
+            logger.info(f"Deleting: {file}")
+            file.unlink()
