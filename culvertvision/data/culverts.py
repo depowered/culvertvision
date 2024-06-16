@@ -62,9 +62,11 @@ def make_dataset(io_manager: DatasetIOManager) -> None:
 
 def remove_dataset(io_manager: DatasetIOManager) -> None:
     for item in Culverts:
-        if item == Culverts.SOURCE:
-            continue  # Don't delete the source
-        file = io_manager.get_path(item)
-        if file.exists():
-            logger.info(f"Deleting: {file}")
-            file.unlink()
+        match item:
+            case Culverts.SOURCE:
+                continue  # Don't delete the source
+            case _:
+                file = io_manager.get_path(item)
+                if file.exists():
+                    logger.info(f"Deleting: {file}")
+                    file.unlink()
