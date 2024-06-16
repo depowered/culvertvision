@@ -15,7 +15,7 @@ dependencies:
   - requests
   - gdal
   - libgdal-arrow-parquet
-  - qgis
+  - geopandas
   - pip:
     - python-dotenv
     - -e .

@@ -1,8 +1,9 @@
-import typer
 from enum import StrEnum, auto
 
+import typer
+
 from culvertvision.config import Settings
-from culvertvision.data import boundaries, watersheds, culverts
+from culvertvision.data import boundaries, culverts, dem_index, watersheds
 from culvertvision.data.io_manager import LocalDatasetIOManager
 
 app = typer.Typer()
@@ -14,6 +15,7 @@ class Dataset(StrEnum):
     BOUNDARIES = auto()
     WATERSHEDS = auto()
     CULVERTS = auto()
+    DEM_INDEX = auto()
 
 
 @app.command()
@@ -27,6 +29,8 @@ def create(datasets: list[Dataset]) -> None:
                 watersheds.make_dataset(IO_MANAGER)
             case Dataset.CULVERTS:
                 culverts.make_dataset(IO_MANAGER)
+            case Dataset.DEM_INDEX:
+                dem_index.make_dataset(IO_MANAGER)
 
 
 @app.command()
@@ -40,6 +44,8 @@ def remove(datasets: list[Dataset]) -> None:
                 watersheds.remove_dataset(IO_MANAGER)
             case Dataset.CULVERTS:
                 culverts.remove_dataset(IO_MANAGER)
+            case Dataset.DEM_INDEX:
+                dem_index.remove_dataset(IO_MANAGER)
 
 
 if __name__ == "__main__":
