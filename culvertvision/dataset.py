@@ -10,39 +10,36 @@ app = typer.Typer()
 IO_MANAGER = LocalDatasetIOManager(data_dir=Settings().DATA_DIR)
 
 
-class Action(StrEnum):
-    CREATE = auto()
-    REMOVE = auto()
+class Dataset(StrEnum):
+    BOUNDARIES = auto()
+    WATERSHEDS = auto()
+    CULVERTS = auto()
 
 
 @app.command()
-def manage_boundaries(action: Action = Action.CREATE) -> None:
-    "Create/remove the boundaries dataset."
-    match action:
-        case Action.CREATE:
-            boundaries.make_dataset(IO_MANAGER)
-        case Action.REMOVE:
-            boundaries.remove_dataset(IO_MANAGER)
+def create(datasets: list[Dataset]) -> None:
+    "Create one or more datasets."
+    for ds in datasets:
+        match ds:
+            case Dataset.BOUNDARIES:
+                boundaries.make_dataset(IO_MANAGER)
+            case Dataset.WATERSHEDS:
+                watersheds.make_dataset(IO_MANAGER)
+            case Dataset.CULVERTS:
+                culverts.make_dataset(IO_MANAGER)
 
 
 @app.command()
-def manage_watersheds(action: Action = Action.CREATE) -> None:
-    "Create/remove the watersheds dataset."
-    match action:
-        case Action.CREATE:
-            watersheds.make_dataset(IO_MANAGER)
-        case Action.REMOVE:
-            watersheds.remove_dataset(IO_MANAGER)
-
-
-@app.command()
-def manage_culverts(action: Action = Action.CREATE) -> None:
-    "Create/remove the culverts dataset."
-    match action:
-        case Action.CREATE:
-            culverts.make_dataset(IO_MANAGER)
-        case Action.REMOVE:
-            culverts.remove_dataset(IO_MANAGER)
+def remove(datasets: list[Dataset]) -> None:
+    "Remove one or more datasets."
+    for ds in datasets:
+        match ds:
+            case Dataset.BOUNDARIES:
+                boundaries.remove_dataset(IO_MANAGER)
+            case Dataset.WATERSHEDS:
+                watersheds.remove_dataset(IO_MANAGER)
+            case Dataset.CULVERTS:
+                culverts.remove_dataset(IO_MANAGER)
 
 
 if __name__ == "__main__":

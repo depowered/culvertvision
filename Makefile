@@ -62,9 +62,7 @@ update_environment:
 .PHONY: create_datasets
 create_datasets:
 	$(CONDA_BIN) run --name $(PROJECT_NAME) --live-stream \
-		python culvertvision/dataset.py manage-watersheds --action create && \
-		python culvertvision/dataset.py manage-boundaries --action create && \
-		python culvertvision/dataset.py manage-culverts --action create
+		python culvertvision/dataset.py create boundaries culverts watersheds
 
 
 
@@ -73,9 +71,7 @@ create_datasets:
 .PHONY: remove_datasets
 remove_datasets:
 	$(CONDA_BIN) run --name $(PROJECT_NAME) --live-stream \
-		python culvertvision/dataset.py manage-watersheds --action remove && \
-		python culvertvision/dataset.py manage-boundaries --action remove && \
-		python culvertvision/dataset.py manage-culverts --action remove
+		python culvertvision/dataset.py remove boundaries culverts watersheds
 
 
 #################################################################################
